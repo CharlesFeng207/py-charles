@@ -1,0 +1,29 @@
+{
+	"Tool": "github.com/davyxu/tabtoy",
+	"Version": "2.8.1",
+	"GlobalData":[
+		{ "ID": 0, "Name": "是我", "Cd": 0.1, "Children":[ 1, 2, 3 ] },
+		{ "ID": 1, "Name": "我是", "Cd": 1.2, "Children":[ 4, 5, 6 ] },
+		{ "ID": 2, "Name": "请问", "Cd": 9.9999000000000002, "Children":[ 7 ] }
+	], 
+	"ActorData":[
+		{ "id": 0, "name": "是我", "cd": 99, "children":[ 1, 2, 3 ], "position": { "x": 1, "y": 2 } },
+		{ "id": 1, "name": "我是", "cd": 100, "children":[ 4, 5, 6 ], "position": { "y": 2 } },
+		{ "id": 2, "name": "请问", "cd": 1, "children":[ 2 ], "position": { "x": 1 } }
+	], 
+	"MsgId":[
+		{ "id": 0, "name": "SC_CreateActor" },
+		{ "id": 1, "name": "CS_ActorSnapshot" },
+		{ "id": 2, "name": "SC_ActorSnapshot" },
+		{ "id": 3, "name": "ActionTrigger" },
+		{ "id": 4, "name": "VictoryPointTriggered" },
+		{ "id": 5, "name": "BroadcastTips" },
+		{ "id": 6, "name": "KillRecord" },
+		{ "id": 7, "name": "CS_GameJoin" },
+		{ "id": 8, "name": "Ping" },
+		{ "id": 9, "name": "ItemTriggered" },
+		{ "id": 10, "name": "MapObjectStateChange" },
+		{ "id": 11, "name": "MapObjectCreate" },
+		{ "id": 12, "name": "SC_GameStart" },
+		{ "id": 13, "name": "ActorPropertyChanged" }
+	]}
