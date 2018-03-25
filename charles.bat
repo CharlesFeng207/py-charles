@@ -6,3 +6,4 @@ if exist %~dp0cmd\%1.bat (
    %~dp0python27\python.exe %~dp0cmd\%1.py %2 %3
    )
 
+pause

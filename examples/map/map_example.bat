@@ -1,1 +1,0 @@
-charles map %~dp0\examples\map\map_example.json
