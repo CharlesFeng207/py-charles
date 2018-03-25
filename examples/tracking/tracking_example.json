@@ -1,0 +1,23 @@
+{
+	"time_start":"2018/3/20",
+	"time_end":"2018/3/23",
+	"time_range_cols":"S,T",
+	
+	"src": "D:\Repositories\py_charles\examples\tracking\CD539 MCA PVPR Tracker (color impact) 20180308.xlsm",
+	"src_sheet": "Tracking List",
+	"src_id_row": "3",
+	"src_data_start_row":"6",
+	
+	"working_table_name":"WeeklyWorkingStart",
+	"temp_working":"D:\Repositories\py_charles\examples\tracking\template_working.xlsx",
+	"temp_working_id_row":"1",
+	"temp_working_data_start_row":"2",
+
+	"delay_table_name":"WeeklyDelayStart",
+	"temp_delay":"D:\Repositories\py_charles\examples\tracking\template_delay.xlsx",
+	"temp_delay_id_row":"2",
+	"temp_delay_data_start_row":"3",
+	
+	"src_delay_combine_col":"E",
+	"delay_combine_number_col":"L"
+}
