@@ -30,8 +30,7 @@ def find_tracking_row_objs():
                 continue
 
             try:
-                cell_time = time.strptime(
-                    str(sheet_src[cell_name].value), '%Y-%m-%d %H:%M:%S')
+                cell_time = time.strptime(cell_value, '%Y-%m-%d %H:%M:%S')
             except:
                 print cell_name, "is not a valid time!"
 
@@ -46,7 +45,7 @@ def find_tracking_row_objs():
                     cell_obj[column_id] = sheet_src["{}{}".format(column_letter, row)].value
 
                 objs.append(cell_obj)
-                print row
+                print "row {} selected ({})".format(row, cell_value)
                 break # avoid duplicated selecting
 
     return objs
