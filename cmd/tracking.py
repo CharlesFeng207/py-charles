@@ -1,10 +1,9 @@
 # coding:utf8
 
-import datetime
+from datetime import datetime
 import json
 import shutil
 import sys
-import time
 from openpyxl import Workbook
 from openpyxl.reader.excel import load_workbook
 from openpyxl.utils import get_column_letter
@@ -24,13 +23,13 @@ def find_tracking_row_objs():
         # will select this row if any of column achieve condition
         for col in time_range_cols: 
             cell_name = "{}{}".format(col, row)
-            cell_value = str(sheet_src[cell_name].value)
+            cell_value = sheet_src[cell_name].value
 
-            if cell_value == "None":
+            if cell_value == None:
                 continue
 
             try:
-                cell_time = time.strptime(cell_value, '%Y-%m-%d %H:%M:%S')
+                cell_time = datetime.strptime(str(cell_value), '%Y-%m-%d %H:%M:%S')
             except:
                 print cell_name, "is not a valid time!"
 
@@ -52,8 +51,7 @@ def find_tracking_row_objs():
 
 def process_working_table():
 
-    working_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], json_data["working_table_name"], time.strftime(
-        "%Y-%m-%d", time_start), time.strftime("%Y-%m-%d", time_end))
+    working_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], json_data["working_table_name"], to_str(time_start), to_str(time_end))
 
     shutil.copy(json_data["temp_working"], working_output_path)
 
@@ -61,21 +59,21 @@ def process_working_table():
 
 def process_delay_table():
     
-    delay_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], json_data["delay_table_name"], time.strftime(
-        "%Y-%m-%d", time_start), time.strftime("%Y-%m-%d", time_end))
+    delay_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], json_data["delay_table_name"], to_str(time_start), to_str(time_end))
 
     shutil.copy(json_data["temp_delay"], delay_output_path)
 
     delay_combine_number_id = json_data["delay_combine_number_id"]
     delay_combine_id = sheet_src["{}{}".format(json_data["delay_combine_col"], src_id_row)].value
 
-    delay_obj_dic = {}
+    delay_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
 
     for obj in src_selected_objs:
         if delay_combine_id not in obj:
             continue
 
         delay_combine_id_value = obj[delay_combine_id]
+
         if delay_combine_id_value not in delay_obj_dic:
             delay_obj_dic[delay_combine_id_value] = {}
         
@@ -84,12 +82,28 @@ def process_delay_table():
         for k in obj:
             if k not in key_list_obj:
                 key_list_obj[k] = []
+
             if obj[k] not in key_list_obj[k]:
                 key_list_obj[k].append(obj[k])
     
-    delay_objs = map(lambda x:{k : ','.join(map(str, x[k])) for k in x}, delay_obj_dic.values())
+    delay_objs = map(lambda x:{k : x[k] for k in x}, delay_obj_dic.values())
 
-    make_table(delay_output_path, int(json_data["delay_working_id_row"]), int(json_data["delay_working_data_start_row"]), delay_objs)
+    make_table(delay_output_path, int(json_data["temp_delay_id_row"]), int(json_data["temp_delay_data_start_row"]), delay_objs)
+
+def to_str(obj):
+    if type(obj) is str:
+        return obj
+
+    if type(obj) is unicode:
+        return obj.encode('UTF-8')
+
+    if type(obj) is datetime:
+        return obj.strftime("%Y-%m-%d")
+
+    if type(obj) is list:
+        return ','.join(map(to_str, obj))
+
+    return str(obj)
 
 def make_table(output_path, id_row, writing_row, target_objs):
     
@@ -103,7 +117,7 @@ def make_table(output_path, id_row, writing_row, target_objs):
         for letter in column_letters_id_dic.keys():
             cell_id = column_letters_id_dic[letter]
             if cell_id in obj:
-                sheet_target["{}{}".format(letter, writing_row)].value = obj[cell_id]
+                sheet_target["{}{}".format(letter, writing_row)].value = to_str(obj[cell_id])
            
         writing_row += 1
     
@@ -123,8 +137,8 @@ if len(sys.argv) == 3:
         # read time info
         time_start_str = json_data["time_start"]
         time_end_str = json_data["time_end"]
-        time_start = time.strptime(time_start_str, "%Y/%m/%d")
-        time_end = time.strptime(time_end_str, "%Y/%m/%d")
+        time_start = datetime.strptime(time_start_str, "%Y/%m/%d")
+        time_end = datetime.strptime(time_end_str, "%Y/%m/%d")
 
         # load source excel
         path_src = json_data["src"]
@@ -139,7 +153,7 @@ if len(sys.argv) == 3:
         # find tracking rows by time info and save as dictionary
         src_selected_objs = find_tracking_row_objs()
 
-        print "from {} to {}, there are {} rows selected!".format(time_start_str, time_end_str, len(selected_cell_objs))
+        print "from {} to {}, there are {} rows selected!".format(time_start_str, time_end_str, len(src_selected_objs))
 
         # make working table
         process_working_table()
