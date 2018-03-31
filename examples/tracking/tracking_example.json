@@ -8,7 +8,7 @@
 	"src_id_row": "3",
 	"src_data_start_row":"6",
 	
-	"working_table_name":"WeeklyWorkingStart",
+	"working_table_name":"",
 	"temp_working":"D:\Repositories\py_charles\examples\tracking\template_working.xlsx",
 	"temp_working_id_row":"1",
 	"temp_working_data_start_row":"2",
@@ -18,6 +18,7 @@
 	"temp_delay_id_row":"2",
 	"temp_delay_data_start_row":"3",
 	
-	"src_delay_combine_col":"E",
-	"delay_combine_number_col":"L"
+	"delay_check_col":"U",
+	"delay_combine_col":"E",
+	"delay_combine_number_id":"Impact Parts No."
 }

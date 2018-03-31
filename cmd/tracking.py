@@ -15,7 +15,7 @@ def find_tracking_row_objs():
     time_range_cols = json_data["time_range_cols"].split(",")
 
     column_letters = map(lambda i: get_column_letter(i), range(1, sheet_src.max_column + 1))
-    column_letters_id_dic = { k:sheet_src["{}{}".format(k, src_id_row)].value for k in column_letters}
+    column_letters_id_dic = { k:src_letter_to_id(k) for k in column_letters}
     
     objs = []
 
@@ -51,33 +51,52 @@ def find_tracking_row_objs():
 
 def process_working_table():
 
-    working_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], json_data["working_table_name"], to_str(time_start), to_str(time_end))
+    working_table_name = json_data["working_table_name"]
+   
+    if working_table_name == u'':
+        print "working_table_name is null"
+        return
+    
+    working_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], working_table_name, to_str(time_start), to_str(time_end))
 
     shutil.copy(json_data["temp_working"], working_output_path)
 
     make_table(working_output_path, int(json_data["temp_working_id_row"]), int(json_data["temp_working_data_start_row"]), src_selected_objs)
 
 def process_delay_table():
-    
-    delay_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], json_data["delay_table_name"], to_str(time_start), to_str(time_end))
+    delay_table_name = json_data["delay_table_name"]
+
+    if delay_table_name == u'':
+        print "delay_table_name is null"
+        return
+
+    delay_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], delay_table_name, to_str(time_start), to_str(time_end))
 
     shutil.copy(json_data["temp_delay"], delay_output_path)
 
     delay_combine_number_id = json_data["delay_combine_number_id"]
-    delay_combine_id = sheet_src["{}{}".format(json_data["delay_combine_col"], src_id_row)].value
+    delay_combine_id = src_letter_to_id(json_data["delay_combine_col"])
 
     delay_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
 
     for obj in src_selected_objs:
+        
+        # just select col which isn't filled with data
+        check_value = obj[src_letter_to_id(json_data["delay_check_col"])]
+        if check_value != None:
+            continue
+
         if delay_combine_id not in obj:
             continue
 
         delay_combine_id_value = obj[delay_combine_id]
 
         if delay_combine_id_value not in delay_obj_dic:
-            delay_obj_dic[delay_combine_id_value] = {}
+            delay_obj_dic[delay_combine_id_value] = {delay_combine_number_id:0}
+            
         
         key_list_obj = delay_obj_dic[delay_combine_id_value]
+        key_list_obj[delay_combine_number_id] += 1
 
         for k in obj:
             if k not in key_list_obj:
@@ -90,7 +109,13 @@ def process_delay_table():
 
     make_table(delay_output_path, int(json_data["temp_delay_id_row"]), int(json_data["temp_delay_data_start_row"]), delay_objs)
 
+def src_letter_to_id(letter):
+    return sheet_src["{}{}".format(letter, src_id_row)].value
+
 def to_str(obj):
+    if obj == None:
+        return ""
+
     if type(obj) is str:
         return obj
 
