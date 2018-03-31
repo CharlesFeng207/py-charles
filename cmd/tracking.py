@@ -61,6 +61,8 @@ def process_working_table():
 
     shutil.copy(table_json_data["temp_working"], working_output_path)
 
+    attach_number_col(src_selected_objs)
+
     make_table(working_output_path, int(table_json_data["temp_working_id_row"]), int(table_json_data["temp_working_data_start_row"]), src_selected_objs)
 
 def process_delay_table():
@@ -94,7 +96,6 @@ def process_delay_table():
         if delay_combine_id_value not in delay_obj_dic:
             delay_obj_dic[delay_combine_id_value] = {delay_combine_number_id:0}
             
-        
         key_list_obj = delay_obj_dic[delay_combine_id_value]
         key_list_obj[delay_combine_number_id] += 1
 
@@ -107,10 +108,16 @@ def process_delay_table():
     
     delay_objs = map(lambda x:{k : x[k] for k in x}, delay_obj_dic.values())
 
+    attach_number_col(delay_objs)
+
     make_table(delay_output_path, int(table_json_data["temp_delay_id_row"]), int(table_json_data["temp_delay_data_start_row"]), delay_objs)
 
 def src_letter_to_id(letter):
     return sheet_src["{}{}".format(letter, src_id_row)].value
+
+def attach_number_col(objs):
+    for i, obj in enumerate(objs):
+        obj["No."] = i + 1
 
 def to_str(obj):
     if obj == None:
