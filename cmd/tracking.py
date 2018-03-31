@@ -152,11 +152,15 @@ def make_table(output_path, id_row, writing_row, target_objs):
 
 if len(sys.argv) == 3:
     json_path = sys.argv[1]
-    
+
     with open(json_path) as json_file:
+
+        print "json config loaded: ", json_path
 
         # init json config
         json_str = json_file.read().replace("\\", "\\\\")
+        print json_str, type(json_str)
+
         json_data = json.loads(json_str)
 
         # read time info
