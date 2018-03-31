@@ -10,9 +10,9 @@ from openpyxl.utils import get_column_letter
 
 def find_tracking_row_objs():
 
-    src_data_start_row = int(json_data["src_data_start_row"])
+    src_data_start_row = int(global_json_data["src_data_start_row"])
   
-    time_range_cols = json_data["time_range_cols"].split(",")
+    time_range_cols = table_json_data["time_range_cols"].split(",")
 
     column_letters = map(lambda i: get_column_letter(i), range(1, sheet_src.max_column + 1))
     column_letters_id_dic = { k:src_letter_to_id(k) for k in column_letters}
@@ -51,38 +51,38 @@ def find_tracking_row_objs():
 
 def process_working_table():
 
-    working_table_name = json_data["working_table_name"]
+    working_table_name = table_json_data["working_table_name"]
    
     if working_table_name == u'':
         print "working_table_name is null"
         return
     
-    working_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], working_table_name, to_str(time_start), to_str(time_end))
+    working_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, working_table_name, to_str(time_start), to_str(time_end))
 
-    shutil.copy(json_data["temp_working"], working_output_path)
+    shutil.copy(table_json_data["temp_working"], working_output_path)
 
-    make_table(working_output_path, int(json_data["temp_working_id_row"]), int(json_data["temp_working_data_start_row"]), src_selected_objs)
+    make_table(working_output_path, int(table_json_data["temp_working_id_row"]), int(table_json_data["temp_working_data_start_row"]), src_selected_objs)
 
 def process_delay_table():
-    delay_table_name = json_data["delay_table_name"]
+    delay_table_name = table_json_data["delay_table_name"]
 
     if delay_table_name == u'':
         print "delay_table_name is null"
         return
 
-    delay_output_path = "{}{}({} to {}).xlsx".format(sys.argv[2], delay_table_name, to_str(time_start), to_str(time_end))
+    delay_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, delay_table_name, to_str(time_start), to_str(time_end))
 
-    shutil.copy(json_data["temp_delay"], delay_output_path)
+    shutil.copy(table_json_data["temp_delay"], delay_output_path)
 
-    delay_combine_number_id = json_data["delay_combine_number_id"]
-    delay_combine_id = src_letter_to_id(json_data["delay_combine_col"])
+    delay_combine_number_id = table_json_data["delay_combine_number_id"]
+    delay_combine_id = src_letter_to_id(table_json_data["delay_combine_col"])
 
     delay_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
 
     for obj in src_selected_objs:
         
         # just select col which isn't filled with data
-        check_value = obj[src_letter_to_id(json_data["delay_check_col"])]
+        check_value = obj[src_letter_to_id(table_json_data["delay_check_col"])]
         if check_value != None:
             continue
 
@@ -107,7 +107,7 @@ def process_delay_table():
     
     delay_objs = map(lambda x:{k : x[k] for k in x}, delay_obj_dic.values())
 
-    make_table(delay_output_path, int(json_data["temp_delay_id_row"]), int(json_data["temp_delay_data_start_row"]), delay_objs)
+    make_table(delay_output_path, int(table_json_data["temp_delay_id_row"]), int(table_json_data["temp_delay_data_start_row"]), delay_objs)
 
 def src_letter_to_id(letter):
     return sheet_src["{}{}".format(letter, src_id_row)].value
@@ -150,45 +150,58 @@ def make_table(output_path, id_row, writing_row, target_objs):
 
     print "{} created!".format(output_path)
 
-if len(sys.argv) == 3:
-    json_path = sys.argv[1]
+if len(sys.argv) == 4:
+    
+    print "sys.argv:", sys.argv
 
-    with open(json_path) as json_file:
+    global_json_path = sys.argv[1]
+    table_json_path = sys.argv[2]
+    user_output_folder = sys.argv[3]
 
-        print "json config loaded: ", json_path
+    # init json config
+    with open(global_json_path) as global_json_file:
+        print "global json config loaded: ", global_json_path
 
-        # init json config
-        json_str = json_file.read().replace("\\", "\\\\")
-        print json_str, type(json_str)
+        global_json_str = global_json_file.read().replace("\\", "\\\\")
+        print global_json_str, type(global_json_str)
 
-        json_data = json.loads(json_str)
+        global_json_data = json.loads(global_json_str)
 
-        # read time info
-        time_start_str = json_data["time_start"]
-        time_end_str = json_data["time_end"]
-        time_start = datetime.strptime(time_start_str, "%Y/%m/%d")
-        time_end = datetime.strptime(time_end_str, "%Y/%m/%d")
+        with open(table_json_path) as table_json_file:
+            print "table json config loaded: ", table_json_path
 
-        # load source excel
-        path_src = json_data["src"]
-        print "loading {}".format(path_src)
+            table_json_str = table_json_file.read().replace("\\", "\\\\")
+            print table_json_str, type(table_json_str)
 
-        workbook_src = load_workbook(json_data["src"])
-        sheet_src = workbook_src[json_data["src_sheet"]]
-        src_id_row = json_data["src_id_row"]
+            table_json_data = json.loads(table_json_str)
 
-        print "load complete! wait for processing ..."
+            # read time info
+            time_start_str = global_json_data["time_start"]
+            time_end_str = global_json_data["time_end"]
+            time_start = datetime.strptime(time_start_str, "%Y/%m/%d")
+            time_end = datetime.strptime(time_end_str, "%Y/%m/%d")
 
-        # find tracking rows by time info and save as dictionary
-        src_selected_objs = find_tracking_row_objs()
+            # load source excel
+            path_src = global_json_data["src"]
+            print "loading {}".format(path_src)
 
-        print "from {} to {}, there are {} rows selected!".format(time_start_str, time_end_str, len(src_selected_objs))
+            workbook_src = load_workbook(path_src)
+            sheet_src = workbook_src[global_json_data["src_sheet"]]
+            src_id_row = global_json_data["src_id_row"]
 
-        # make working table
-        process_working_table()
+            print "load complete! wait for processing ..."
 
-        # make delay table
-        process_delay_table()
+            # find tracking rows by time info and save as dictionary
+            src_selected_objs = find_tracking_row_objs()
+
+            print "from {} to {}, there are {} rows selected!".format(time_start_str, time_end_str, len(src_selected_objs))
+
+            # make working table
+            process_working_table()
+
+            # make delay table
+            process_delay_table()
+       
 
 else:
-    print "please input two parameters!"
+    print "please input three parameters! (global json path, table json path, out put folder path)"
