@@ -115,6 +115,7 @@ def process_delay_table():
 def src_letter_to_id(letter):
     return sheet_src["{}{}".format(letter, src_id_row)].value
 
+# add a col to indicate each data order automatically
 def attach_number_col(objs):
     for i, obj in enumerate(objs):
         obj["No."] = i + 1
