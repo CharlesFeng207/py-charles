@@ -1,0 +1,8 @@
+{
+	"time_start":"2018/3/20", 
+	"time_end":"2018/3/23", 
+    "src": "D:\Repositories\py_charles\examples\tracking\CD539 MCA PVPR Tracker (color impact) 20180308.xlsm", 
+	"src_sheet": "Tracking List", 
+	"src_id_row": "3", 
+	"src_data_start_row":"5"
+}
