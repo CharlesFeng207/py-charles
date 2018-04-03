@@ -218,10 +218,10 @@ if len(sys.argv) == 4:
             print "from {} to {}, there are {} rows selected!".format(time_start_str, time_end_str, len(src_selected_objs))
 
             # make working table
-            # process_working_table()
+            process_working_table()
 
             # make delay table
-            # process_delay_table()
+            process_delay_table()
        
 
 else:
