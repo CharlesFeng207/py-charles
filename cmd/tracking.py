@@ -8,34 +8,33 @@ from openpyxl import Workbook
 from openpyxl.reader.excel import load_workbook
 from openpyxl.utils import get_column_letter
 
+
 def find_tracking_row_objs():
 
     src_data_start_row = int(global_json_data["src_data_start_row"])
-  
+
     time_range_cols = table_json_data["time_range_cols"].split(",")
 
-    column_letters = map(lambda i: get_column_letter(i), range(1, sheet_src.max_column + 1))
-    column_letters_id_dic = { k:src_letter_to_id(k) for k in column_letters}
-    
+    column_letters = map(lambda i: get_column_letter(i),
+                         range(1, sheet_src.max_column + 1))
+    column_letters_id_dic = {k: src_letter_to_id(k) for k in column_letters}
+
     objs = []
 
     for row in range(src_data_start_row, sheet_src.max_row + 1):
         # will select this row if any of column achieve condition
-        for col in time_range_cols: 
+        for col in time_range_cols:
             cell_name = "{}{}".format(col, row)
             cell_value = sheet_src[cell_name].value
 
             if cell_value == None:
                 continue
 
-            try:
-                cell_time = datetime.strptime(str(cell_value), '%Y-%m-%d %H:%M:%S')
-            except:
-                print cell_name, "is not a valid time!"
+        # print cell_value, type(cell_value)
 
-            if cell_time >= time_start and cell_time <= time_end:
-                cell_obj = {} # collect all data as a diectionary
-                for column_letter in column_letters: # each column as a key
+            if check_time_range(cell_value):
+                cell_obj = {}  # collect all data as a diectionary
+                for column_letter in column_letters:  # each column as a key
                     column_id = column_letters_id_dic[column_letter]
 
                     if column_id == "None":
@@ -43,11 +42,25 @@ def find_tracking_row_objs():
 
                     cell_obj[column_id] = sheet_src["{}{}".format(column_letter, row)].value
 
-                objs.append(cell_obj)
-                print "row {} selected ({})".format(row, cell_value)
-                break # avoid duplicated selecting
+                    objs.append(cell_obj)
+                    print "row {} selected ({})".format(row, cell_value)
+                    break  # avoid duplicated selecting
 
     return objs
+
+def check_time_range(cell_value):
+    
+    if type(cell_value) is unicode:
+        t1 = map(lambda x: datetime.strptime(x, "%Y/%m/%d"), cell_value.split())
+        t2 = map(lambda x: check_time_range(x), t1)
+        t3 = any(t2)
+        return t3
+
+    if type(cell_value) is datetime:
+        if cell_value >= time_start and cell_value <= time_end:
+            return True
+
+    return False
 
 def process_working_table():
 
@@ -205,10 +218,10 @@ if len(sys.argv) == 4:
             print "from {} to {}, there are {} rows selected!".format(time_start_str, time_end_str, len(src_selected_objs))
 
             # make working table
-            process_working_table()
+            # process_working_table()
 
             # make delay table
-            process_delay_table()
+            # process_delay_table()
        
 
 else:
