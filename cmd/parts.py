@@ -10,9 +10,9 @@ from copy import deepcopy
 
 class PartChanging:
     
-    op_init = 'op_init'
-    op_override = 'op_override'
-    op_delete = 'op_delete'
+    op_init = 'init'
+    op_override = 'override'
+    op_delete = 'delete'
 
     def __init__(self, new_part_id, old_part_id, new_part_data, old_part_data, row_number):
         self.new_part_id = new_part_id
@@ -22,7 +22,7 @@ class PartChanging:
         self.row_number = row_number
 
     def __str__(self):
-         return 'PartChanging id:{} -> {} row:{}'.format(
+         return '<--------- PartChanging id:{} -> {} row:{} ------------->'.format(
              self.old_part_id, self.new_part_id, self.row_number)
     
     def do(self, parts_wrapper_objs):
@@ -49,7 +49,10 @@ class PartChanging:
             print modified_data.op_info
 
             parts_wrapper_objs[self.old_part_id].append_part_data_record(modified_data)
-        else: # new operation: override old part + init new part + build
+        else: # new: override old part + init new part + build relationship
+
+            # override updated data
+
             modified_data = deepcopy(self.old_part_data)
             modified_data.op_info = '{} {} by row {}, new part id: {}'.format(
                 PartChanging.op_override, self.old_part_id, self.row_number, self.new_part_id)
@@ -60,6 +63,10 @@ class PartChanging:
                 if k in modified_data.car_usage and self.new_part_data.car_usage[k] > 0:
                     modified_data.car_usage[k] = 0
             parts_wrapper_objs[self.old_part_id].append_part_data_record(modified_data)
+
+            # build relationship
+            parts_wrapper_objs[self.old_part_id].next_part = parts_wrapper_objs[self.new_part_id]
+            parts_wrapper_objs[self.new_part_id].pre_part = parts_wrapper_objs[self.old_part_id]
            
     @staticmethod
     def init_before_operation(parts_wrapper_objs, part_id, part_data, op_info):
@@ -78,7 +85,16 @@ class PartWrapper:
         self.pre_part = None
         self.next_part = None
         self.part_id = part_id
-        self.part_data_records = []        
+        self.part_data_records = []
+
+    def __str__(self):
+        return str(self.part_id)
+
+    def get_detail_str(self):
+        arr = [str(item) for item in self.part_data_records]
+        arr.insert(0, str(self)) # add self
+        arr_str = '\n'.join(arr)
+        return arr_str
 
     def is_root_wrapper(self):
         return self.pre_part == None
@@ -110,44 +126,47 @@ class PartDataRecord:
     def __init__(self):
         self.car_usage = {}
         self.op_info = None
+
+    def __str__(self):
+        return "<-- op_info:{} car_usage:{} -->".format(self.op_info, self.format_car_usage())
         
     def is_avalible(self):
         t = map(lambda x: x > 0, self.car_usage.values())
         return any(t)
     
-    def update_from_new_usage(self, card_usage):
-        for k in card_usage:
-            if k in self.car_usage:
-                if card_usage[k] > 0:
-                    self.car_usage[k] = 0
-        pass
-
-    def clear_usage(self):
-        self.car_usage = {}
-        pass
-    
     def set_usage(self, car_usage):
         self.car_usage = car_usage
         pass
 
+    def format_car_usage(self):
+        arr = [self.car_usage[column_letters_id_dic[col]] for col in new_part_usage_cols]
+        arr_str = ''.join(arr)
+        return arr_str
+
 def src_letter_to_id(letter):
     return sheet_src["{}{}".format(letter, src_id_row)].value
 
-def format_cell_value(cell_value):
+def load_src_cell_value(col, row):
+    cell_value = sheet_src["{}{}".format(col, row)].value
+    return format_cell_value(cell_value)
     
+def format_cell_value(cell_value):
     if type(cell_value) is unicode:
         cell_value = u"".join(cell_value.split()) # delete nbsp
         return cell_value.encode('utf-8')
 
     if type(cell_value) is str:
-         return cell_value
+        return cell_value
 
+    if cell_value == None:
+        return None
+        
     return str(cell_value)
 
 def print_parts_wrapper_objs(parts_wrapper_objs):
     for item in parts_wrapper_objs.values():
-        if item.is_root_wrapper():
-            print item.part_id
+        print item.get_detail_str()
+    pass
 
 src_path = u'D:\\Repositories\\py_charles\\cmd\\Change Log - Copy.xlsx'
 
@@ -175,23 +194,23 @@ column_letters_id_dic = {k: src_letter_to_id(k) for k in column_letters}
 changelist = []
 for row in range(src_data_start_row, sheet_src.max_row + 1):
     
-    new_part_id = format_cell_value(sheet_src["{}{}".format(new_part_id_col, row)].value)
+    new_part_id = load_src_cell_value(new_part_id_col, row)
     new_part_usage = {}
     for col in new_part_usage_cols:
-        cell_value = sheet_src["{}{}".format(col, row)].value
+        cell_value = load_src_cell_value(col, row)
         new_part_usage[column_letters_id_dic[col]] = cell_value
 
     new_part_data = PartDataRecord()
-    new_part_data.car_usage = new_part_usage
+    new_part_data.set_usage(new_part_usage)
 
-    old_part_id = format_cell_value(sheet_src["{}{}".format(old_part_id_col, row)].value)
+    old_part_id = load_src_cell_value(old_part_id_col, row)
     old_part_usage = {}
     for col in old_part_usage_cols:
-        cell_value = sheet_src["{}{}".format(col, row)].value
+        cell_value = load_src_cell_value(col, row)
         old_part_usage[column_letters_id_dic[col]] = cell_value
     
     old_part_data = PartDataRecord()
-    old_part_data.car_usage = old_part_usage
+    old_part_data.set_usage(old_part_usage)
 
     part_change = PartChanging(new_part_id, old_part_id, new_part_data, old_part_data, row)
     changelist.append(part_change)
