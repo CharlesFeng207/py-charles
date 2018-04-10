@@ -110,9 +110,11 @@ class PartWrapper:
 
     def __str__(self):
         pre_str = self.pre_part.part_id if self.pre_part != None else 'None'
+        root_str = self.root_wrapper.part_id if self.root_wrapper != None else 'None'
+
         next_str = str(map(lambda x: x.part_id, self.next_part))
-        return "< PartWrapper id:{} pre:{} next:{} avalible:{}>".format(
-            str(self.part_id), pre_str, next_str, self.is_avalible)
+        return "< PartWrapper id:{} pre:{} root:{} next:{} avalible:{}>".format(
+            str(self.part_id), pre_str, root_str, next_str, self.is_avalible)
 
     def append_part_data_record(self, part_data_record):
         self.part_data_records.append(part_data_record)
@@ -223,7 +225,7 @@ def print_parts_wrapper_objs(parts_wrapper_objs):
     for item in parts_wrapper_objs.values():
         print item.detail_str, "\n"
     
-    print "\n< print_parts_wrapper_objs end >"
+    print "\n< print_parts_wrapper_objs end >\n"
 
 def is_valid_id(part_id):
     if type(part_id) is str:
@@ -235,22 +237,42 @@ def is_valid_id(part_id):
     
     return False
 
-# def process_parts_initial_table():
-#     parts_target_table_path = u'D:\\Repositories\\py_charles\\cmd\\1234.xlsx'
-#     targert_parts_col = 'AR'
-#     targert_parts_row_start = 10
-#     targert_parts_row_end = 100
+def load_parts_wookbook(workbook_path):
+    print 'loading... ', workbook_path
+    since = time.time()
+    workbook_loaded = load_workbook(workbook_path, data_only=True)
+    print "load complete! time cost: ", time.time() - since
 
+    return workbook_loaded
+
+def process_parts_initial_table():
+    
+    parts_table_path = u'D:\\Repositories\\py_charles\\cmd\\C490 MCA TT BoM Validation_20180319.xlsx'
+    workbook_parts_target = load_parts_wookbook(parts_table_path)
+    sheet_name = 'TT BoM '
+    sheet_parts_target = workbook_parts_target[sheet_name]
+
+    targert_parts_col = 'AP'
+    row_start = 10
+    row_end = 1562
+
+    taret_parts_id = [(row, load_cell_part_id(sheet_parts_target, targert_parts_col, row)) for row in range(row_start, row_end + 1)]
+    
+    for row, target_id in taret_parts_id:
+        if not is_valid_id(target_id):
+            print 'error: {} (row {}) is invalid!'.format(target_id, row)
+            raw_input()
+            continue
+        
+        if target_id not in parts_wrapper_objs:
+            print '{} (row {}) not found in src wookbook'.format(target_id, row)
+            # raw_input()
+            continue
+
+        print 'the root of target {} (row {}) is {}\n'.format(target_id, row, parts_wrapper_objs[target_id].root_wrapper)
+        
 src_path = u'D:\\Repositories\\py_charles\\cmd\\1234.xlsx'
-
-print 'loading... ', src_path
-since = time.time()
-
-workbook_src = load_workbook(src_path, data_only=True)
-
-print time.time() - since
-print "load complete! wait for processing ..."
-
+workbook_src = load_parts_wookbook(src_path)
 sheet_src = workbook_src['Change Log']
 
 src_id_row = 5
@@ -264,7 +286,7 @@ old_part_usage_cols = ['AT','AU','AV','AW','AX','AY','AZ','BA']
 column_letters = map(lambda i: get_column_letter(i), range(1, sheet_src.max_column + 1))
 column_letters_id_dic = {k: src_letter_to_id(k) for k in column_letters}
 
-changelist = []
+changelist = [] # collect change logs
 for row in range(src_data_start_row, sheet_src.max_row + 1):
     
     new_part_id = load_cell_part_id(sheet_src, new_part_id_col, row)
@@ -299,6 +321,8 @@ try:
     print 'build parts object complete! \n \n'
 
     print_parts_wrapper_objs(parts_wrapper_objs)
+
+    process_parts_initial_table()
 
 except Exception as err:
     print err
