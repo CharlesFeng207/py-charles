@@ -11,17 +11,9 @@ from copy import deepcopy
 
 class PartChanging:
     
-    # when a part first time to appear.
     op_init = 'init'
-
-    # if new part is just old part, will override old part data
     op_override = 'override' 
-
-    # if old part updated to new part, will clear usage which the new part using, 
-    # after that build a relationship between the new and old
     op_update = 'update'
-
-    # if new part id is invalid, will clear all usage for old part id
     op_delete = 'delete' 
 
     def __init__(self, new_part_id, old_part_id, new_part_data, old_part_data, row_number):
@@ -33,37 +25,41 @@ class PartChanging:
 
     def __str__(self):
          return '< PartChanging id:{} {} -> {} {} row:{} >'.format(
-             self.old_part_id, is_valid_part_id(self.old_part_id), self.new_part_id, is_valid_part_id(self.new_part_id), self.row_number)
+             self.old_part_id, is_valid_id(self.old_part_id), self.new_part_id, is_valid_id(self.new_part_id), self.row_number)
     
     def do(self, parts_wrapper_objs):
 
         print self
 
+        # when a part first time to appear
         PartChanging.init_before_operation(parts_wrapper_objs, self.old_part_id, self.old_part_data, 
         '{} {} by row {}'.format(PartChanging.op_init, self.old_part_id, self.row_number))
 
         PartChanging.init_before_operation(parts_wrapper_objs, self.new_part_id, self.new_part_data, 
         '{} {} by row {}'.format(PartChanging.op_init, self.new_part_id, self.row_number))
 
-        if self.new_part_id == None: # delete
+        # if new part id is invalid but the old is valid will clear all usage for old part id
+        if (not is_valid_id(self.new_part_id)) and is_valid_id(self.old_part_id): # delete
             empty_data = PartDataRecord()
             empty_data.op_info = '{} {} by row {}'.format(PartChanging.op_delete, self.old_part_id, self.row_number)
             print empty_data.op_info
             parts_wrapper_objs[self.old_part_id].append_part_data_record(empty_data)
 
-        elif self.new_part_id == self.old_part_id: # override
+        # if new part is just old part, will override old part data
+        elif is_valid_id(self.new_part_id) and is_valid_id(self.old_part_id) and self.new_part_id == self.old_part_id: # override
             modified_data = deepcopy(self.new_part_data)
             modified_data.op_info = '{} {} by row {}'.format(PartChanging.op_override, self.old_part_id, self.row_number)
             print modified_data.op_info
 
             parts_wrapper_objs[self.old_part_id].append_part_data_record(modified_data)
-        else: # upate: override old part + init new part + build relationship
 
-            # override updated data
+        # if old part updated to new part, will clear usage which the new part using, 
+        # after that build a relationship between the new and old
+        elif is_valid_id(self.new_part_id) and is_valid_id(self.old_part_id) and self.new_part_id != self.old_part_id:
 
             modified_data = deepcopy(self.old_part_data)
             modified_data.op_info = '{} {} by row {}, new part id: {}'.format(
-                PartChanging.op_override, self.old_part_id, self.row_number, self.new_part_id)
+                PartChanging.op_update, self.old_part_id, self.row_number, self.new_part_id)
 
             print modified_data.op_info
 
@@ -81,6 +77,8 @@ class PartChanging:
                 old_part_state.next_part.append(new_part_state)
 
             new_part_state.pre_part = old_part_state
+        else:
+            print 'unhandle situaltion!'
             
         print '\n'
            
@@ -184,8 +182,9 @@ def load_cell_car_usage(sheet, col, row):
     if type(cell_value) is None:
         return 0
 
-    if type(cell_value) is not long and type(cell_value) is not float and type(cell_value) is int:
-        print "Error: {}{} {}({}) is not number!!".format(col, row, cell_value, type(cell_value))
+    # check if it is a number
+    if not any(map(lambda x:type(cell_value) is x, [float, int, long])):
+        print "error: {}{} {}({}) is not number!!".format(col, row, cell_value, type(cell_value))
 
     return cell_value
 
@@ -198,15 +197,14 @@ def print_parts_wrapper_objs(parts_wrapper_objs):
     
     print "\n< print_parts_wrapper_objs end >"
 
-def is_valid_part_id(part_id):
+def is_valid_id(part_id):
     if type(part_id) is str:
         t1 = part_id.split('-')
         if len(t1) > 2:
             t2 = map(lambda x:x == '0' or x == '', t1)
-            t3 = all(t2) == False
+            t3 = not all(t2)
             return t3
     
-        
     return False
 
 # def process_parts_initial_table():
@@ -265,7 +263,7 @@ for row in range(src_data_start_row, sheet_src.max_row + 1):
 try:
     parts_wrapper_objs = {}
     
-    print len(changelist)
+    print len(changelist), ' change logs found!'
     
     for item in changelist:
         item.do(parts_wrapper_objs)
