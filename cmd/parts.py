@@ -32,24 +32,25 @@ class PartChanging:
         print self
 
         # when a part first time to appear
-        PartChanging.init_before_operation(parts_wrapper_objs, self.old_part_id, self.old_part_data, 
-        '{} {} by row {}'.format(PartChanging.op_init, self.old_part_id, self.row_number))
+        PartChanging.init_before_operation(parts_wrapper_objs, self.old_part_id, self.old_part_data, self.row_number)
 
-        PartChanging.init_before_operation(parts_wrapper_objs, self.new_part_id, self.new_part_data, 
-        '{} {} by row {}'.format(PartChanging.op_init, self.new_part_id, self.row_number))
+        PartChanging.init_before_operation(parts_wrapper_objs, self.new_part_id, self.new_part_data, self.row_number)
 
         # if new part id is invalid but the old is valid will clear all usage for old part id
         if (not is_valid_id(self.new_part_id)) and is_valid_id(self.old_part_id): # delete
             empty_data = PartDataRecord()
-            empty_data.op_info = '{} {} by row {}'.format(PartChanging.op_delete, self.old_part_id, self.row_number)
-            print empty_data.op_info
+            empty_data.record_info = '{} {} (empty) by row {}'.format(PartChanging.op_delete, self.old_part_id, self.row_number)
+            print empty_data.record_info
             parts_wrapper_objs[self.old_part_id].append_part_data_record(empty_data)
 
         # if new part is just old part, will override old part data
         elif is_valid_id(self.new_part_id) and is_valid_id(self.old_part_id) and self.new_part_id == self.old_part_id: # override
             modified_data = deepcopy(self.new_part_data)
-            modified_data.op_info = '{} {} by row {}'.format(PartChanging.op_override, self.old_part_id, self.row_number)
-            print modified_data.op_info
+            modified_data.record_info = '{} {} ({} -> {}) by row {}'.format(
+                PartChanging.op_override, self.old_part_id, 
+                self.old_part_data.data_summary, self.new_part_data.data_summary, self.row_number)
+
+            print modified_data.record_info
 
             parts_wrapper_objs[self.old_part_id].append_part_data_record(modified_data)
 
@@ -58,10 +59,6 @@ class PartChanging:
         elif is_valid_id(self.new_part_id) and is_valid_id(self.old_part_id) and self.new_part_id != self.old_part_id:
 
             modified_data = deepcopy(self.old_part_data)
-            modified_data.op_info = '{} {} by row {}, new part id: {}'.format(
-                PartChanging.op_update, self.old_part_id, self.row_number, self.new_part_id)
-
-            print modified_data.op_info
 
             for k in self.new_part_data.car_usage:
                 if k in modified_data.car_usage and self.new_part_data.car_usage[k] > 0:
@@ -69,6 +66,13 @@ class PartChanging:
 
             old_part_state = parts_wrapper_objs[self.old_part_id]
             new_part_state = parts_wrapper_objs[self.new_part_id]
+
+            modified_data.record_info = '{} {}({} -> {}) by row {}, new part id: {}'.format(
+                PartChanging.op_update, self.old_part_id, 
+                self.old_part_data.data_summary, modified_data.data_summary, 
+                self.row_number, self.new_part_id)
+
+            print modified_data.record_info
 
             old_part_state.append_part_data_record(modified_data)
 
@@ -83,11 +87,14 @@ class PartChanging:
         print '\n'
            
     @staticmethod
-    def init_before_operation(parts_wrapper_objs, part_id, part_data, op_info):
-        if part_id != None and part_id not in parts_wrapper_objs:
+    def init_before_operation(parts_wrapper_objs, part_id, part_data, row_number):
+        if is_valid_id(part_id) and part_id not in parts_wrapper_objs:
             init_data = deepcopy(part_data)
-            init_data.op_info = op_info
-            print op_info
+
+            init_data.record_info = '{} {}({}) by row {}'.format(
+                PartChanging.op_init, part_id, init_data.data_summary, row_number)
+            
+            print init_data.record_info
 
             t = PartWrapper(part_id)
             t.append_part_data_record(init_data)
@@ -102,60 +109,80 @@ class PartWrapper:
         self.part_data_records = []
 
     def __str__(self):
-        return str(self.part_id)
+        pre_str = self.pre_part.part_id if self.pre_part != None else 'None'
+        next_str = str(map(lambda x: x.part_id, self.next_part))
+        return "< PartWrapper id:{} pre:{} next:{} avalible:{}>".format(
+            str(self.part_id), pre_str, next_str, self.is_avalible)
 
-    def get_detail_str(self):
+    def append_part_data_record(self, part_data_record):
+        self.part_data_records.append(part_data_record)
+
+    @property
+    def detail_str(self):
         arr = [str(item) for item in self.part_data_records]
         arr.insert(0, str(self)) # add self
         arr_str = '\n'.join(arr)
         return arr_str
 
+    @property
     def is_root_wrapper(self):
         return self.pre_part == None
 
+    @property
     def is_final_wrapper(self):
         return len(self.next_part) == 0
     
-    def find_root_wrapper(self):
+    @property
+    def root_wrapper(self):
         t = self
-        while not t.is_root_wrapper():
+        while not t.is_root_wrapper:
             t = t.pre_part
         return t
 
-    def append_part_data_record(self, part_data_record):
-        self.part_data_records.append(part_data_record)
-
-    def get_initial_part_data(self):
+    @property
+    def initial_part_data(self):
         if len(self.part_data_records) > 0:
             return self.part_data_records[0]
         return None
     
-    def get_newest_part_data(self):
+    @property
+    def newest_part_data(self):
         if len(self.part_data_records) > 0:
             return self.part_data_records[-1]
         return None
+
+    @property
+    def is_avalible(self):
+        t = self.newest_part_data
+        return t.is_avalible if t != None else False
 
 class PartDataRecord:
     
     def __init__(self):
         self.car_usage = {}
-        self.op_info = None
+        self.record_info = None
 
     def __str__(self):
-        return "< op_info:{} car_usage:{} >".format(self.op_info, self.format_car_usage())
-        
-    def is_avalible(self):
-        t = map(lambda x: x > 0, self.car_usage.values())
-        return any(t)
+        return "< {} >".format(self.record_info)
     
     def set_usage(self, car_usage):
         self.car_usage = car_usage
         pass
 
-    def format_car_usage(self):
-        arr = [str(self.car_usage[column_letters_id_dic[col]]) for col in new_part_usage_cols]
+    @property
+    def is_avalible(self):
+        t = map(lambda x: x > 0, self.car_usage.values())
+        return any(t)
+
+    @property
+    def car_usage_str(self):
+        arr = [str(self.car_usage[column_letters_id_dic[col]]) for col in new_part_usage_cols if column_letters_id_dic[col] in self.car_usage]
         arr_str = ''.join(arr)
         return arr_str
+    
+    @property
+    def data_summary(self):
+        return self.car_usage_str
 
 def src_letter_to_id(letter):
     return sheet_src["{}{}".format(letter, src_id_row)].value
@@ -179,12 +206,13 @@ def load_cell_car_usage(sheet, col, row):
     
     cell_value = sheet["{}{}".format(col, row)].value
 
-    if type(cell_value) is None:
+    if cell_value == None:
         return 0
 
     # check if it is a number
     if not any(map(lambda x:type(cell_value) is x, [float, int, long])):
         print "error: {}{} {}({}) is not number!!".format(col, row, cell_value, type(cell_value))
+        raw_input()
 
     return cell_value
 
@@ -193,7 +221,7 @@ def print_parts_wrapper_objs(parts_wrapper_objs):
     print "< print_parts_wrapper_objs >\n"
 
     for item in parts_wrapper_objs.values():
-        print item.get_detail_str()
+        print item.detail_str, "\n"
     
     print "\n< print_parts_wrapper_objs end >"
 
@@ -213,7 +241,7 @@ def is_valid_id(part_id):
 #     targert_parts_row_start = 10
 #     targert_parts_row_end = 100
 
-src_path = u'D:\\Repositories\\py_charles\\cmd\\123.xlsx'
+src_path = u'D:\\Repositories\\py_charles\\cmd\\1234.xlsx'
 
 print 'loading... ', src_path
 since = time.time()
@@ -263,7 +291,7 @@ for row in range(src_data_start_row, sheet_src.max_row + 1):
 try:
     parts_wrapper_objs = {}
     
-    print len(changelist), ' change logs found!'
+    print len(changelist), ' change logs found! \n'
     
     for item in changelist:
         item.do(parts_wrapper_objs)
