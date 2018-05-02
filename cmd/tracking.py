@@ -127,11 +127,6 @@ def process_delay_table():
     delay_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
 
     for obj in src_selected_objs:
-        
-        # just select col which isn't filled with data
-        check_value = obj[src_letter_to_id(table_json_data["work_check_col"])]
-        if check_value != None:
-            continue
 
         if delay_combine_id not in obj:
             continue
