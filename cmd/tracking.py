@@ -129,7 +129,7 @@ def process_delay_table():
     for obj in src_selected_objs:
         
         # just select col which isn't filled with data
-        check_value = obj[src_letter_to_id(table_json_data["delay_check_col"])]
+        check_value = obj[src_letter_to_id(table_json_data["work_check_col"])]
         if check_value != None:
             continue
 
