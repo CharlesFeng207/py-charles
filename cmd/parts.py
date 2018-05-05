@@ -269,7 +269,7 @@ def process_parts_initial_table():
             # raw_input()
             continue
 
-        print 'the root of target {} (row {}) is {}\n'.format(target_id, row, parts_wrapper_objs[target_id].root_wrapper)
+        print 'target {} (row {}) root is {}\n'.format(target_id, row, parts_wrapper_objs[target_id].root_wrapper)
         
 src_path = u'D:\\Repositories\\py_charles\\cmd\\1234.xlsx'
 workbook_src = load_parts_wookbook(src_path)
