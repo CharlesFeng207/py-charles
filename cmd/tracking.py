@@ -74,41 +74,9 @@ def process_working_table():
 
     shutil.copy(table_json_data["temp_working"], working_output_path)
 
-    combine_number_id = table_json_data["work_combine_number_id"]
-    combine_id = src_letter_to_id(table_json_data["work_combine_col"])
+    attach_number_col(src_selected_objs)
 
-    combined_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
-
-    for obj in src_selected_objs:
-        
-        # just select col which isn't filled with data
-        check_value = obj[src_letter_to_id(table_json_data["delay_check_col"])]
-        if check_value != None:
-            continue
-
-        if combine_id not in obj:
-            continue
-
-        combine_id_value = obj[combine_id]
-
-        if combine_id_value not in combined_obj_dic:
-            combined_obj_dic[combine_id_value] = {combine_number_id:0}
-            
-        key_list_obj = combined_obj_dic[combine_id_value]
-        key_list_obj[combine_number_id] += 1
-
-        for k in obj:
-            if k not in key_list_obj:
-                key_list_obj[k] = []
-
-            if obj[k] not in key_list_obj[k]:
-                key_list_obj[k].append(obj[k])
-    
-    combined_objs = map(lambda x:{k : x[k] for k in x}, combined_obj_dic.values())
-
-    attach_number_col(combined_objs)
-
-    make_table(working_output_path, int(table_json_data["temp_working_id_row"]), int(table_json_data["temp_working_data_start_row"]), combined_objs)
+    make_table(working_output_path, int(table_json_data["temp_working_id_row"]), int(table_json_data["temp_working_data_start_row"]), src_selected_objs)
 
 def process_delay_table():
     delay_table_name = table_json_data["delay_table_name"]
@@ -127,6 +95,11 @@ def process_delay_table():
     delay_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
 
     for obj in src_selected_objs:
+        
+        # just select col which isn't filled with data
+        check_value = obj[src_letter_to_id(table_json_data["delay_check_col"])]
+        if check_value != None:
+            continue
 
         if delay_combine_id not in obj:
             continue
