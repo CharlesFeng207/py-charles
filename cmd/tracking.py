@@ -70,7 +70,7 @@ def process_working_table():
         print "working_table_name is null"
         return
     
-    working_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, working_table_name, to_str(time_start), to_str(time_end))
+    working_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, working_table_name, cell_to_str(time_start), cell_to_str(time_end))
 
     shutil.copy(table_json_data["temp_working"], working_output_path)
 
@@ -85,33 +85,43 @@ def process_delay_table():
         print "delay_table_name is null"
         return
 
-    delay_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, delay_table_name, to_str(time_start), to_str(time_end))
+    delay_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, delay_table_name, cell_to_str(time_start), cell_to_str(time_end))
 
     shutil.copy(table_json_data["temp_delay"], delay_output_path)
 
     delay_combine_number_id = table_json_data["delay_combine_number_id"]
     delay_combine_id = src_letter_to_id(table_json_data["delay_combine_col"])
+    
+    # just select col which isn't filled with data
+    delay_filter_id = src_letter_to_id(table_json_data["delay_check_col"])
 
-    delay_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
+    combined_objs = combine_target_objs(filter(lambda x:x[delay_filter_id] == None, src_selected_objs),
+    delay_combine_id, delay_combine_number_id)
 
-    for obj in src_selected_objs:
-        
-        # just select col which isn't filled with data
-        check_value = obj[src_letter_to_id(table_json_data["delay_check_col"])]
-        if check_value != None:
+    attach_number_col(combined_objs)
+
+    make_table(delay_output_path, int(table_json_data["temp_delay_id_row"]), int(table_json_data["temp_delay_data_start_row"]), combined_objs)
+
+def combine_target_objs(target_objs, combine_id, number_id):
+    
+    temp_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
+
+    for obj in target_objs:
+
+        if combine_id not in obj:
             continue
 
-        if delay_combine_id not in obj:
-            continue
+        combine_id_value = obj[combine_id]
 
-        delay_combine_id_value = obj[delay_combine_id]
-
-        if delay_combine_id_value not in delay_obj_dic:
-            delay_obj_dic[delay_combine_id_value] = {delay_combine_number_id:0}
+        # if this is a new value, add it
+        if combine_id_value not in temp_obj_dic:
+            temp_obj_dic[combine_id_value] = {number_id:0}
             
-        key_list_obj = delay_obj_dic[delay_combine_id_value]
-        key_list_obj[delay_combine_number_id] += 1
+        # add number
+        key_list_obj = temp_obj_dic[combine_id_value]
+        key_list_obj[number_id] += 1
 
+        # handle other keys for this value
         for k in obj:
             if k not in key_list_obj:
                 key_list_obj[k] = []
@@ -119,11 +129,7 @@ def process_delay_table():
             if obj[k] not in key_list_obj[k]:
                 key_list_obj[k].append(obj[k])
     
-    delay_objs = map(lambda x:{k : x[k] for k in x}, delay_obj_dic.values())
-
-    attach_number_col(delay_objs)
-
-    make_table(delay_output_path, int(table_json_data["temp_delay_id_row"]), int(table_json_data["temp_delay_data_start_row"]), delay_objs)
+    return map(lambda x:{k : x[k] for k in x}, temp_obj_dic.values())
 
 def src_letter_to_id(letter):
     return sheet_src["{}{}".format(letter, src_id_row)].value
@@ -133,7 +139,7 @@ def attach_number_col(objs):
     for i, obj in enumerate(objs):
         obj["No."] = i + 1
 
-def to_str(obj):
+def cell_to_str(obj):
     if obj == None:
         return ""
 
@@ -147,7 +153,7 @@ def to_str(obj):
         return obj.strftime("%Y-%m-%d")
 
     if type(obj) is list:
-        return ','.join(map(to_str, obj))
+        return ','.join(map(cell_to_str, obj))
 
     return str(obj)
 
