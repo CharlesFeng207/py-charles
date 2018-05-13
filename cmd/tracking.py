@@ -7,7 +7,8 @@ import sys
 from openpyxl import Workbook
 from openpyxl.reader.excel import load_workbook
 from openpyxl.utils import get_column_letter
-
+import charlesUtil
+from charlesUtil import to_str
 
 def find_tracking_row_objs():
 
@@ -30,7 +31,7 @@ def find_tracking_row_objs():
             if cell_value == None:
                 continue
 
-        # print cell_value, type(cell_value)
+            # print cell_value, type(cell_value)
 
             if check_time_range(cell_value):
                 cell_obj = {}  # collect all data as a diectionary
@@ -62,6 +63,7 @@ def check_time_range(cell_value):
 
     return False
 
+
 def process_working_table():
 
     working_table_name = table_json_data["working_table_name"]
@@ -70,112 +72,47 @@ def process_working_table():
         print "working_table_name is null"
         return
     
-    working_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, working_table_name, cell_to_str(time_start), cell_to_str(time_end))
+    working_combine_id = src_letter_to_id(table_json_data["working_combine_col"])
+    working_combine_number_id = table_json_data["working_combine_number_id"]
 
-    shutil.copy(table_json_data["temp_working"], working_output_path)
+    after_combined = charlesUtil.combine_key_to_list(src_selected_objs, lambda x:x[working_combine_id], working_combine_number_id)
+    charlesUtil.attach_number_col(after_combined, 'No.')
 
-    attach_number_col(src_selected_objs)
+    # prepare parameter
+    temp_working = table_json_data["temp_working"]
+    working_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, working_table_name, to_str(time_start), to_str(time_end))
+    temp_working_id_row = int(table_json_data["temp_working_id_row"])
+    temp_working_data_start_row = int(table_json_data["temp_working_data_start_row"])
 
-    make_table(working_output_path, int(table_json_data["temp_working_id_row"]), int(table_json_data["temp_working_data_start_row"]), src_selected_objs)
+    charlesUtil.make_table(temp_working, working_output_path,temp_working_id_row,temp_working_data_start_row, after_combined)
 
 def process_delay_table():
+
     delay_table_name = table_json_data["delay_table_name"]
 
     if delay_table_name == u'':
         print "delay_table_name is null"
         return
 
-    delay_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, delay_table_name, cell_to_str(time_start), cell_to_str(time_end))
-
-    shutil.copy(table_json_data["temp_delay"], delay_output_path)
-
-    delay_combine_number_id = table_json_data["delay_combine_number_id"]
     delay_combine_id = src_letter_to_id(table_json_data["delay_combine_col"])
+    delay_combine_number_id = table_json_data["delay_combine_number_id"]
     
     # just select col which isn't filled with data
     delay_filter_id = src_letter_to_id(table_json_data["delay_check_col"])
+    after_filtered = filter(lambda x:x[delay_filter_id] == None, src_selected_objs)
 
-    combined_objs = combine_target_objs(filter(lambda x:x[delay_filter_id] == None, src_selected_objs),
-    delay_combine_id, delay_combine_number_id)
+    after_filtered_combined = charlesUtil.combine_key_to_list(after_filtered, lambda x:x[delay_combine_id], delay_combine_number_id)
+    charlesUtil.attach_number_col(after_filtered_combined, 'No.')
 
-    attach_number_col(combined_objs)
+    delay_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, delay_table_name, to_str(time_start), to_str(time_end))
+    temp_delay_path = table_json_data["temp_delay"]
+    temp_delay_id_row = int(table_json_data["temp_delay_id_row"])
+    temp_delay_data_start_row = int(table_json_data["temp_delay_data_start_row"])
 
-    make_table(delay_output_path, int(table_json_data["temp_delay_id_row"]), int(table_json_data["temp_delay_data_start_row"]), combined_objs)
-
-def combine_target_objs(target_objs, combine_id, number_id):
-    
-    temp_obj_dic = {} # { id_value : { every_key_in_src : [every_values] } }
-
-    for obj in target_objs:
-
-        if combine_id not in obj:
-            continue
-
-        combine_id_value = obj[combine_id]
-
-        # if this is a new value, add it
-        if combine_id_value not in temp_obj_dic:
-            temp_obj_dic[combine_id_value] = {number_id:0}
-            
-        # add number
-        key_list_obj = temp_obj_dic[combine_id_value]
-        key_list_obj[number_id] += 1
-
-        # handle other keys for this value
-        for k in obj:
-            if k not in key_list_obj:
-                key_list_obj[k] = []
-
-            if obj[k] not in key_list_obj[k]:
-                key_list_obj[k].append(obj[k])
-    
-    return map(lambda x:{k : x[k] for k in x}, temp_obj_dic.values())
+    charlesUtil.make_table(temp_delay_path,delay_output_path, temp_delay_id_row, temp_delay_data_start_row, after_filtered_combined)
 
 def src_letter_to_id(letter):
     return sheet_src["{}{}".format(letter, src_id_row)].value
-
-# add a col to indicate each data order automatically
-def attach_number_col(objs):
-    for i, obj in enumerate(objs):
-        obj["No."] = i + 1
-
-def cell_to_str(obj):
-    if obj == None:
-        return ""
-
-    if type(obj) is str:
-        return obj
-
-    if type(obj) is unicode:
-        return obj.encode('UTF-8')
-
-    if type(obj) is datetime:
-        return obj.strftime("%Y-%m-%d")
-
-    if type(obj) is list:
-        return ','.join(map(cell_to_str, obj))
-
-    return str(obj)
-
-def make_table(output_path, id_row, writing_row, target_objs):
-    
-    workbook_target = load_workbook(output_path)
-    sheet_target = workbook_target.active
-
-    column_letters = map(lambda i: get_column_letter(i), range(1, sheet_target.max_column + 1))
-    column_letters_id_dic = { k:sheet_target["{}{}".format(k, id_row)].value for k in column_letters}
-
-    for obj in target_objs:
-        for letter in column_letters_id_dic.keys():
-            cell_id = column_letters_id_dic[letter]
-            if cell_id in obj:
-                sheet_target["{}{}".format(letter, writing_row)].value = to_str(obj[cell_id])
-           
-        writing_row += 1
-    
-    workbook_target.save(output_path)
-
-    print "{} created!".format(output_path)
 
 if len(sys.argv) == 4:
     

@@ -12,6 +12,9 @@
 	"temp_working":"D:\Repositories\py_charles\examples\tracking\template_working.xlsx", # working模版表路径
 	"temp_working_id_row":"1", # working模版表哪一行为数据id
 	"temp_working_data_start_row":"2", # working模版表的数据是从哪一行开始的
+	"working_combine_col":"E", # 生成working表时，会根据源表中该行的数据来合并数据行
+	"working_combine_number_id":"Impact Parts No." # 合并后数量的数据id
+
 
 	"delay_table_name":"WeeklyDelayStart", # 待生成的delay表名字，留空则表示不需要生成该表
 	"temp_delay":"D:\Repositories\py_charles\examples\tracking\template_delay.xlsx", # delay模版表路径
