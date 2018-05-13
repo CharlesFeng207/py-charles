@@ -82,6 +82,7 @@ def process_working_table():
     # provide a property id to keep record cout after combined
     working_combine_number_id = table_json_data["working_combine_number_id"]
 
+    print src_selected_objs
     after_combined = charlesUtil.combine_key_to_list(src_selected_objs, lambda x:x[working_combine_id], working_combine_number_id)
     charlesUtil.attach_number_col(after_combined, 'No.')
 
