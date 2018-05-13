@@ -106,6 +106,7 @@ def process_delay_table():
     # just select col which isn't filled with data
     delay_filter_id = src_letter_to_id(table_json_data["delay_check_col"])
     after_filtered = filter(lambda x:x[delay_filter_id] == None, src_selected_objs)
+    print "just select delayed record, after filtered:", len(after_filtered)
 
     # if the combine id of two records is the same, they should be combined to one
     delay_combine_id = src_letter_to_id(table_json_data["delay_combine_col"])
