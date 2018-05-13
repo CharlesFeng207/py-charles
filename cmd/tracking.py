@@ -17,9 +17,7 @@ def find_tracking_row_objs():
 
     # indicate which cols in src table would be judged by time_start and time_end
     # if any of cols satisfy would be selected
-    time_range_cols = table_json_data["time_range_cols"].split()
-    print table_json_data["time_range_cols"]
-    print time_range_cols
+    time_range_cols = table_json_data["time_range_cols"].split(',')
 
     column_letters = map(lambda i: get_column_letter(i),
                          range(1, sheet_src.max_column + 1))
@@ -31,7 +29,6 @@ def find_tracking_row_objs():
         # will select this row if any of column achieve condition
         for col in time_range_cols:
             cell_name = "{}{}".format(col, row)
-            print cell_name
             cell_value = sheet_src[cell_name].value
 
             if cell_value == None:
