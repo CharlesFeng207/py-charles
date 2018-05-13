@@ -99,8 +99,9 @@ def process_delay_table():
 
     delay_table_name = table_json_data["delay_table_name"]
 
+    # the same logic for working table
     if delay_table_name == u'':
-        print "delay_table_name is null"
+        print "delay_table_name is null, it's not requred to make this table"
         return
 
     # just select col which isn't filled with data
@@ -117,7 +118,7 @@ def process_delay_table():
     after_filtered_combined = charlesUtil.combine_key_to_list(after_filtered, lambda x:x[delay_combine_id], delay_combine_number_id)
     charlesUtil.attach_number_col(after_filtered_combined, 'No.')
 
-    # prepare parameter to make table
+    # prepare parameters to make table
     delay_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, delay_table_name, to_str(time_start), to_str(time_end))
     temp_delay_path = table_json_data["temp_delay"]
     temp_delay_id_row = int(table_json_data["temp_delay_id_row"])
