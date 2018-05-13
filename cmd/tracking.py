@@ -58,7 +58,7 @@ def check_time_range(cell_value):
     
     # it's string, covert to datetime, may be multiple data
     if type(cell_value) is unicode:
-        t1 = map(lambda x: datetime.strptime(x, "%Y/%m/%d"), cell_value.split())
+        t1 = map(lambda x: datetime.strptime(x, "%Y/%m/%d"), cell_value.split(','))
         t2 = map(lambda x: check_time_range(x), t1)
         t3 = any(t2) # as long as one of data successful
         return t3
