@@ -12,9 +12,12 @@ from charlesUtil import to_str
 
 def find_tracking_row_objs():
 
+    # indicate from which row number would be known as data
     src_data_start_row = int(global_json_data["src_data_start_row"])
 
-    time_range_cols = table_json_data["time_range_cols"].split(",")
+    # indicate which cols in src table would be judged by time_start and time_end
+    # if any of cols satisfy would be selected
+    time_range_cols = table_json_data["time_range_cols"].split()
 
     column_letters = map(lambda i: get_column_letter(i),
                          range(1, sheet_src.max_column + 1))
@@ -51,10 +54,11 @@ def find_tracking_row_objs():
 
 def check_time_range(cell_value):
     
+    # it's string, covert to datetime, may be multiple data
     if type(cell_value) is unicode:
         t1 = map(lambda x: datetime.strptime(x, "%Y/%m/%d"), cell_value.split())
         t2 = map(lambda x: check_time_range(x), t1)
-        t3 = any(t2)
+        t3 = any(t2) # as long as one of data successful
         return t3
 
     if type(cell_value) is datetime:
@@ -63,22 +67,25 @@ def check_time_range(cell_value):
 
     return False
 
-
 def process_working_table():
 
+    # if not define table name means it's not requred to make this table
     working_table_name = table_json_data["working_table_name"]
    
     if working_table_name == u'':
-        print "working_table_name is null"
+        print "working_table_name is null, it's not requred to make this table"
         return
     
+    # if the combine id of two records is the same, they should be combined to one
     working_combine_id = src_letter_to_id(table_json_data["working_combine_col"])
+
+    # provide a property id to keep record cout after combined
     working_combine_number_id = table_json_data["working_combine_number_id"]
 
     after_combined = charlesUtil.combine_key_to_list(src_selected_objs, lambda x:x[working_combine_id], working_combine_number_id)
     charlesUtil.attach_number_col(after_combined, 'No.')
 
-    # prepare parameter
+    # prepare parameter to make table
     temp_working = table_json_data["temp_working"]
     working_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, working_table_name, to_str(time_start), to_str(time_end))
     temp_working_id_row = int(table_json_data["temp_working_id_row"])
@@ -94,16 +101,20 @@ def process_delay_table():
         print "delay_table_name is null"
         return
 
-    delay_combine_id = src_letter_to_id(table_json_data["delay_combine_col"])
-    delay_combine_number_id = table_json_data["delay_combine_number_id"]
-    
     # just select col which isn't filled with data
     delay_filter_id = src_letter_to_id(table_json_data["delay_check_col"])
     after_filtered = filter(lambda x:x[delay_filter_id] == None, src_selected_objs)
 
+    # if the combine id of two records is the same, they should be combined to one
+    delay_combine_id = src_letter_to_id(table_json_data["delay_combine_col"])
+    
+    # provide a property id to keep record cout after combined
+    delay_combine_number_id = table_json_data["delay_combine_number_id"]
+
     after_filtered_combined = charlesUtil.combine_key_to_list(after_filtered, lambda x:x[delay_combine_id], delay_combine_number_id)
     charlesUtil.attach_number_col(after_filtered_combined, 'No.')
 
+    # prepare parameter to make table
     delay_output_path = "{}{}({} to {}).xlsx".format(user_output_folder, delay_table_name, to_str(time_start), to_str(time_end))
     temp_delay_path = table_json_data["temp_delay"]
     temp_delay_id_row = int(table_json_data["temp_delay_id_row"])
@@ -118,6 +129,7 @@ if len(sys.argv) == 4:
     
     print "sys.argv:", sys.argv
 
+    # get user parameters
     global_json_path = sys.argv[1]
     table_json_path = sys.argv[2]
     user_output_folder = sys.argv[3]
@@ -126,6 +138,7 @@ if len(sys.argv) == 4:
     with open(global_json_path) as global_json_file:
         print "global json config loaded: ", global_json_path
 
+        # hanle backsplash
         global_json_str = global_json_file.read().replace("\\", "\\\\")
         print global_json_str, type(global_json_str)
 
@@ -159,6 +172,8 @@ if len(sys.argv) == 4:
             src_selected_objs = find_tracking_row_objs()
 
             print "from {} to {}, there are {} rows selected!".format(time_start_str, time_end_str, len(src_selected_objs))
+
+            # make tables by 'src_selected_objs'
 
             # make working table
             process_working_table()
