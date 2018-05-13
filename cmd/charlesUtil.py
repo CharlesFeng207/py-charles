@@ -17,7 +17,7 @@ def combine_key_to_list(obj_lst, func, number_id = None):
     temp_obj_dic = {} # { id_value : { every_key : [every_values] } }
 
     for obj in obj_lst:
-        print obj
+        
         combine_id_value = func(obj)
 
         # if this is a new value, add it

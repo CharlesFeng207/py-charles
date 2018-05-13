@@ -23,6 +23,9 @@ def find_tracking_row_objs():
                          range(1, sheet_src.max_column + 1))
     column_letters_id_dic = {k: src_letter_to_id(k) for k in column_letters}
 
+    print column_letters
+    print column_letters_id_dic
+
     objs = []
 
     for row in range(src_data_start_row, sheet_src.max_row + 1):
@@ -38,6 +41,7 @@ def find_tracking_row_objs():
 
             if check_time_range(cell_value):
                 cell_obj = {}  # collect all data as a diectionary
+
                 for column_letter in column_letters:  # each column as a key
                     column_id = column_letters_id_dic[column_letter]
 
@@ -50,6 +54,7 @@ def find_tracking_row_objs():
                     print "row {} selected ({})".format(row, cell_value)
                     break  # avoid duplicated selecting
 
+    print objs
     return objs
 
 def check_time_range(cell_value):
@@ -82,7 +87,6 @@ def process_working_table():
     # provide a property id to keep record cout after combined
     working_combine_number_id = table_json_data["working_combine_number_id"]
 
-    print src_selected_objs
     after_combined = charlesUtil.combine_key_to_list(src_selected_objs, lambda x:x[working_combine_id], working_combine_number_id)
     charlesUtil.attach_number_col(after_combined, 'No.')
 
