@@ -23,9 +23,6 @@ def find_tracking_row_objs():
                          range(1, sheet_src.max_column + 1))
     column_letters_id_dic = {k: src_letter_to_id(k) for k in column_letters}
 
-    print column_letters
-    print column_letters_id_dic
-
     objs = []
 
     for row in range(src_data_start_row, sheet_src.max_row + 1):
@@ -49,12 +46,12 @@ def find_tracking_row_objs():
                         continue
 
                     cell_obj[column_id] = sheet_src["{}{}".format(column_letter, row)].value
+                    pass
+                
+                objs.append(cell_obj)
+                print "row {} selected ({})".format(row, cell_value)
+                break  # avoid duplicated selecting
 
-                    objs.append(cell_obj)
-                    print "row {} selected ({})".format(row, cell_value)
-                    break  # avoid duplicated selecting
-
-    print objs
     return objs
 
 def check_time_range(cell_value):
