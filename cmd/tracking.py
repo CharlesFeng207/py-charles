@@ -35,8 +35,13 @@ def find_tracking_row_objs():
                 continue
 
             # print cell_value, type(cell_value)
+            try:
+                isInTimeRange = check_time_range(cell_value)
+            except:
+                print "{} is not a valid time str in {}".format(cell_value, cell_name)
+                return
 
-            if check_time_range(cell_value):
+            if isInTimeRange:
                 cell_obj = {}  # collect all data as a diectionary
 
                 for column_letter in column_letters:  # each column as a key
