@@ -38,7 +38,7 @@ def find_tracking_row_objs():
             try:
                 isInTimeRange = check_time_range(cell_value)
             except:
-                print "{} is not a valid time str in {}".format(cell_value, cell_name)
+                print "{} is not a valid time str in {}".format(to_str(cell_value), cell_name)
                 return
 
             if isInTimeRange:
